@@ -50,6 +50,6 @@ const profile = {
 };
 
 const pdf = simpleReminder(invoice, reminder, profile);
-pdf.getBase64((data) => {
-  $("iframe").attr("src", `data:application/pdf;base64,${data}`);
+pdf.getDataUrl({}, (data) => {
+  $("iframe").attr("src", data);
 });
