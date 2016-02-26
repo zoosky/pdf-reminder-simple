@@ -6,5 +6,5 @@ Example:
 ```javascript
 import simpleReminder from "pdf-reminder-simple";
 
-simpleReminder(invoice, reminder, profile).open();
+simpleReminder(invoice, reminder, profile).print();
 ```
