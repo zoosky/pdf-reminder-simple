@@ -78,7 +78,7 @@ function getTemplate(invoice, reminder, profile) {
         postCode: address.postCode,
         city: address.city
       }),
-      margin: [0, 120, 0, 0],
+      margin: [0, 100, 0, 0],
       fontSize: 8,
       color: "gray"
     }, {
