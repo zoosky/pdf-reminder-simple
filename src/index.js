@@ -1,3 +1,4 @@
+import moment from "moment";
 import Pdf from "pdfmake-browser";
 import robotoFont from "roboto-base64";
 
@@ -57,27 +58,77 @@ const footerLayout = {
   }
 };
 
-export default (invoice, reminder, profile) => {
-  return new Pdf(getTemplate(invoice, reminder, profile), {
+export default (options) => {
+  return new Pdf(getTemplate(options), {
     Roboto: robotoFont
   });
 };
 
-function getTemplate(invoice, reminder, profile) {
-  const organizationSettings = profile.organizationSettings;
-  const address = organizationSettings.address;
-  const billingAddress = invoice.billingAddress;
-  const totalAmount = invoice.total + reminder.feeAmount;
+function getTemplate(options) {
+  const organizationAddress = options.organizationAddress || null;
+  const billingAddress = options.billingAddress || {};
+  const date = options.date || moment();
+  const customerName = options.customerName || "";
+  const reminderName = options.reminderName || "";
+  const reminderText = options.reminderText || "";
+  const invoiceNumber = options.invoiceNumber || "";
+  const invoiceDate = options.invoiceDate || null;
+  const invoiceTotal = options.invoiceTotal || 0;
+  const feeAmount = options.feeAmount || 0;
+  const total = options.total || 0;
+  const currency = options.currency || "CHF";
+  const note = options.note;
+
+  const leftFields = [];
+  if (billingAddress.name) {
+    leftFields.push(billingAddress.name);
+  }
+  if (billingAddress.attn) {
+    leftFields.push(billingAddress.attn);
+  }
+  if (billingAddress.street) {
+    leftFields.push(billingAddress.street);
+  }
+  const location = (billingAddress.postCode || "") + (billingAddress.city && billingAddress.postCode ? " " : "") + (billingAddress.city || "");
+  if (location) {
+    leftFields.push(location);
+  }
+
+  const rightFields = [];
+  if (date) {
+    rightFields.push({
+      key: "Datum:",
+      value: date.format("DD.MM.YYYY")
+    });
+  }
+  if (customerName) {
+    rightFields.push({
+      key: "Kunde:",
+      value: customerName
+    });
+  }
+
+  const headTableBody = [];
+  const tableHeight = Math.max(leftFields.length, rightFields.length);
+  for (let i = 0; i < tableHeight; i++) {
+    const leftValue = leftFields[i];
+    const rightObject = rightFields[i] || {};
+    headTableBody.push([
+      leftValue || "",
+      "",
+      rightObject.key || "", {
+        text: rightObject.value || "",
+        alignment: "right"
+      }
+    ]);
+  }
+
+  const organizationAddressText = organizationAddress ? getFlatAddressText(organizationAddress) : "";
 
   const doc = {
     defaultStyle: defaultStyle,
     content: [{
-      text: returnAddressText({
-        name: organizationSettings.name,
-        street: address.street,
-        postCode: address.postCode,
-        city: address.city
-      }),
+      text: organizationAddressText,
       margin: [0, 100, 0, 0],
       fontSize: 8,
       color: "gray"
@@ -86,22 +137,15 @@ function getTemplate(invoice, reminder, profile) {
       layout: "noBorders",
       table: {
         widths: ["auto", "*", "auto", "auto"],
-        body: [
-          [invoice.contactName || "", "", "Datum:", {
-            text: reminder.creationDate.format("DD.MM.YYYY"),
-            alignment: "right"
-          }],
-          [billingAddress.street || "", "", "", ""],
-          [(billingAddress.postCode || "") + " " + (billingAddress.city || ""), "", "", ""]
-        ]
+        body: headTableBody
       }
     }, {
       fontSize: 18,
-      text: reminder.typeName,
+      text: reminderName,
       margin: [0, 50, 0, 0]
     }, {
       margin: [0, 25, 0, 0],
-      text: reminder.note || ""
+      text: reminderText
     }, {
       margin: [0, 25, 0, 0],
       layout: tableLayout,
@@ -120,21 +164,21 @@ function getTemplate(invoice, reminder, profile) {
 
   doc.content[4].table.body.push([{
     stack: [
-      "Rechnung", {
+      "Rechnung " + (invoiceNumber ? invoiceNumber.toString() : ""), {
         margin: [0, 2, 0, 0],
-        text: invoice.date.format("DD.MM.YYYY"),
+        text: invoiceDate ? invoiceDate.format("DD.MM.YYYY") : "",
         color: "gray"
       }
     ]
   }, {
-    text: invoice.total.toFixed(2),
+    text: invoiceTotal.toFixed(2),
     alignment: "right"
   }]);
 
-  if (reminder.feeAmount) {
+  if (feeAmount) {
     doc.content[4].table.body.push([
       "Gebühr", {
-        text: reminder.feeAmount.toFixed(2),
+        text: feeAmount.toFixed(2),
         alignment: "right"
       }
     ]);
@@ -148,8 +192,8 @@ function getTemplate(invoice, reminder, profile) {
       widths: ["*", "auto"],
       body: [
         [
-          "Gesamtsumme " + (invoice.currencyId || "CHF"), {
-            text: totalAmount.toFixed(2),
+          "Gesamtsumme " + currency, {
+            text: total.toFixed(2),
             alignment: "right"
           }
         ]
@@ -157,17 +201,19 @@ function getTemplate(invoice, reminder, profile) {
     }
   });
 
-  doc.content.push({
-    text: profile.invoiceSettings.note || "",
-    margin: [0, 20, 0, 0],
-    color: "gray",
-    fontSize: 8
-  });
+  if (note) {
+    doc.content.push({
+      text: note,
+      margin: [0, 20, 0, 0],
+      color: "gray",
+      fontSize: 8
+    });
+  }
 
   return doc;
 }
 
-function returnAddressText(address) {
+function getFlatAddressText(address) {
   const location = [address.postCode, address.city].join(" ").trim();
 
   return [address.name, address.street, location].filter((value) => {

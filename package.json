@@ -1,7 +1,7 @@
 {
   "name": "pdf-reminder-simple",
   "description": "A simple pdf reminder template",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "author": "Orbin",
   "keywords": [
     "pdf",
@@ -15,6 +15,7 @@
   "main": "dist/pdf-reminder-simple.js",
   "license": "MIT",
   "dependencies": {
+    "moment": "^2.14.1",
     "pdfmake-browser": "^0.2.3",
     "roboto-base64": "^0.1.2"
   },
@@ -27,7 +28,6 @@
     "html-webpack-plugin": "^2.7.1",
     "jquery": "^2.2.0",
     "jshint-loader": "^0.8.3",
-    "moment": "^2.11.2",
     "webpack": "^1.12.11",
     "webpack-dev-server": "^1.14.1"
   },

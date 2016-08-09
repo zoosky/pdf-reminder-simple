@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("pdfmake-browser"), require("roboto-base64"));
+		module.exports = factory(require("moment"), require("pdfmake-browser"), require("roboto-base64"));
 	else if(typeof define === 'function' && define.amd)
-		define(["pdfmake-browser", "roboto-base64"], factory);
+		define(["moment", "pdfmake-browser", "roboto-base64"], factory);
 	else {
-		var a = typeof exports === 'object' ? factory(require("pdfmake-browser"), require("roboto-base64")) : factory(root["pdfmake-browser"], root["roboto-base64"]);
+		var a = typeof exports === 'object' ? factory(require("moment"), require("pdfmake-browser"), require("roboto-base64")) : factory(root["moment"], root["pdfmake-browser"], root["roboto-base64"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__) {
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_3__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -60,11 +60,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 
-	var _pdfmakeBrowser = __webpack_require__(1);
+	var _moment = __webpack_require__(1);
+
+	var _moment2 = _interopRequireDefault(_moment);
+
+	var _pdfmakeBrowser = __webpack_require__(2);
 
 	var _pdfmakeBrowser2 = _interopRequireDefault(_pdfmakeBrowser);
 
-	var _robotoBase = __webpack_require__(2);
+	var _robotoBase = __webpack_require__(3);
 
 	var _robotoBase2 = _interopRequireDefault(_robotoBase);
 
@@ -116,27 +120,73 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	};
 
-	exports.default = function (invoice, reminder, profile) {
-	  return new _pdfmakeBrowser2.default(getTemplate(invoice, reminder, profile), {
+	exports.default = function (options) {
+	  return new _pdfmakeBrowser2.default(getTemplate(options), {
 	    Roboto: _robotoBase2.default
 	  });
 	};
 
-	function getTemplate(invoice, reminder, profile) {
-	  var organizationSettings = profile.organizationSettings;
-	  var address = organizationSettings.address;
-	  var billingAddress = invoice.billingAddress;
-	  var totalAmount = invoice.total + reminder.feeAmount;
+	function getTemplate(options) {
+	  var organizationAddress = options.organizationAddress || null;
+	  var billingAddress = options.billingAddress || {};
+	  var date = options.date || (0, _moment2.default)();
+	  var customerName = options.customerName || "";
+	  var reminderName = options.reminderName || "";
+	  var reminderText = options.reminderText || "";
+	  var invoiceNumber = options.invoiceNumber || "";
+	  var invoiceDate = options.invoiceDate || null;
+	  var invoiceTotal = options.invoiceTotal || 0;
+	  var feeAmount = options.feeAmount || 0;
+	  var total = options.total || 0;
+	  var currency = options.currency || "CHF";
+	  var note = options.note;
+
+	  var leftFields = [];
+	  if (billingAddress.name) {
+	    leftFields.push(billingAddress.name);
+	  }
+	  if (billingAddress.attn) {
+	    leftFields.push(billingAddress.attn);
+	  }
+	  if (billingAddress.street) {
+	    leftFields.push(billingAddress.street);
+	  }
+	  var location = (billingAddress.postCode || "") + (billingAddress.city && billingAddress.postCode ? " " : "") + (billingAddress.city || "");
+	  if (location) {
+	    leftFields.push(location);
+	  }
+
+	  var rightFields = [];
+	  if (date) {
+	    rightFields.push({
+	      key: "Datum:",
+	      value: date.format("DD.MM.YYYY")
+	    });
+	  }
+	  if (customerName) {
+	    rightFields.push({
+	      key: "Kunde:",
+	      value: customerName
+	    });
+	  }
+
+	  var headTableBody = [];
+	  var tableHeight = Math.max(leftFields.length, rightFields.length);
+	  for (var i = 0; i < tableHeight; i++) {
+	    var leftValue = leftFields[i];
+	    var rightObject = rightFields[i] || {};
+	    headTableBody.push([leftValue || "", "", rightObject.key || "", {
+	      text: rightObject.value || "",
+	      alignment: "right"
+	    }]);
+	  }
+
+	  var organizationAddressText = organizationAddress ? getFlatAddressText(organizationAddress) : "";
 
 	  var doc = {
 	    defaultStyle: defaultStyle,
 	    content: [{
-	      text: returnAddressText({
-	        name: organizationSettings.name,
-	        street: address.street,
-	        postCode: address.postCode,
-	        city: address.city
-	      }),
+	      text: organizationAddressText,
 	      margin: [0, 100, 0, 0],
 	      fontSize: 8,
 	      color: "gray"
@@ -145,18 +195,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	      layout: "noBorders",
 	      table: {
 	        widths: ["auto", "*", "auto", "auto"],
-	        body: [[invoice.contactName || "", "", "Datum:", {
-	          text: reminder.creationDate.format("DD.MM.YYYY"),
-	          alignment: "right"
-	        }], [billingAddress.street || "", "", "", ""], [(billingAddress.postCode || "") + " " + (billingAddress.city || ""), "", "", ""]]
+	        body: headTableBody
 	      }
 	    }, {
 	      fontSize: 18,
-	      text: reminder.typeName,
+	      text: reminderName,
 	      margin: [0, 50, 0, 0]
 	    }, {
 	      margin: [0, 25, 0, 0],
-	      text: reminder.note || ""
+	      text: reminderText
 	    }, {
 	      margin: [0, 25, 0, 0],
 	      layout: tableLayout,
@@ -172,19 +219,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	  };
 
 	  doc.content[4].table.body.push([{
-	    stack: ["Rechnung", {
+	    stack: ["Rechnung " + (invoiceNumber ? invoiceNumber.toString() : ""), {
 	      margin: [0, 2, 0, 0],
-	      text: invoice.date.format("DD.MM.YYYY"),
+	      text: invoiceDate ? invoiceDate.format("DD.MM.YYYY") : "",
 	      color: "gray"
 	    }]
 	  }, {
-	    text: invoice.total.toFixed(2),
+	    text: invoiceTotal.toFixed(2),
 	    alignment: "right"
 	  }]);
 
-	  if (reminder.feeAmount) {
+	  if (feeAmount) {
 	    doc.content[4].table.body.push(["Gebühr", {
-	      text: reminder.feeAmount.toFixed(2),
+	      text: feeAmount.toFixed(2),
 	      alignment: "right"
 	    }]);
 	  }
@@ -195,24 +242,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	    table: {
 	      headerRows: 1,
 	      widths: ["*", "auto"],
-	      body: [["Gesamtsumme " + (invoice.currencyId || "CHF"), {
-	        text: totalAmount.toFixed(2),
+	      body: [["Gesamtsumme " + currency, {
+	        text: total.toFixed(2),
 	        alignment: "right"
 	      }]]
 	    }
 	  });
 
-	  doc.content.push({
-	    text: profile.invoiceSettings.note || "",
-	    margin: [0, 20, 0, 0],
-	    color: "gray",
-	    fontSize: 8
-	  });
+	  if (note) {
+	    doc.content.push({
+	      text: note,
+	      margin: [0, 20, 0, 0],
+	      color: "gray",
+	      fontSize: 8
+	    });
+	  }
 
 	  return doc;
 	}
 
-	function returnAddressText(address) {
+	function getFlatAddressText(address) {
 	  var location = [address.postCode, address.city].join(" ").trim();
 
 	  return [address.name, address.street, location].filter(function (value) {
@@ -231,6 +280,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports) {
 
 	module.exports = __WEBPACK_EXTERNAL_MODULE_2__;
+
+/***/ },
+/* 3 */
+/***/ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_3__;
 
 /***/ }
 /******/ ])
