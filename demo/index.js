@@ -3,6 +3,7 @@ import moment from "moment";
 import simpleReminder from "../src";
 
 const pdf = simpleReminder({
+  invertHeader: true,
   organizationAddress: {
     name: "Orbin",
     street: "Strasse 333",

@@ -1,13 +1,16 @@
 # pdf-reminder-simple
-A simple pdf reminder template
+[![NPM Version][npm-image]][downloads-url] [![NPM Downloads][downloads-image]][downloads-url]
 
-Example:
+**A simple pdf reminder template**
+
+## Usage
 
 ```javascript
 import moment from "moment";
 import simpleReminder from "pdf-reminder-simple";
 
 simpleReminder({
+  invertHeader: true,
   organizationAddress: {
     name: "Orbin",
     street: "Strasse 333",
@@ -34,3 +37,12 @@ simpleReminder({
   note: "Meine Notiz"
 }).print("reminder.pdf");
 ```
+
+## License
+
+[MIT](LICENSE)
+
+[downloads-image]: https://img.shields.io/npm/dm/pdf-reminder-simple.svg
+[downloads-url]: https://npmjs.org/package/pdf-reminder-simple
+[npm-image]: https://img.shields.io/npm/v/pdf-reminder-simple.svg
+[npm-url]: https://npmjs.org/package/pdf-reminder-simple
